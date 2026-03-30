@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrabiScan AI — Dashboard</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body style="background:var(--color-bg);color:var(--color-text)">
+
+<div class="admin-container">
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div>
+      <h1>📊 Tableau de bord</h1>
+      <p class="text-dim" style="font-size:0.85rem">StrabiScan AI — Interface administrateur</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <a href="/" class="btn btn-outline btn-sm">← Application</a>
+      <button id="btn-logout" class="btn btn-danger btn-sm">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-cards" id="stat-cards">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Analyses totales</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-validated">—</div>
+      <div class="stat-label">Validées</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-accuracy">—</div>
+      <div class="stat-label">Précision IA</div>
+    </div>
+    <div class="stat-card" style="grid-column:span 1">
+      <canvas id="dist-chart" height="70"></canvas>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all"        onclick="Admin.setFilter('all',this)">Toutes</button>
+    <button class="filter-tab"        data-filter="validated"  onclick="Admin.setFilter('validated',this)">Validées</button>
+    <button class="filter-tab"        data-filter="unvalidated" onclick="Admin.setFilter('unvalidated',this)">Non validées</button>
+  </div>
+
+  <!-- Alert -->
+  <div id="alert" class="alert alert-error"></div>
+
+  <!-- Analyses table -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="analyses-table" id="analyses-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Aperçu</th>
+          <th>Classification</th>
+          <th>Déviation</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="analyses-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--color-text-dim)">Chargement…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="pagination"></div>
+
+</div><!-- /admin-container -->
+
+<script src="/static/js/admin.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => Admin.initDashboard());
+</script>
+</body>
+</html>

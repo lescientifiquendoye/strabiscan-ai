@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrabiScan AI</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+
+  <!-- MediaPipe Face Detection (real-time quality check) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Chart.js annotation plugin (for the needle line) -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+  <!-- jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <a href="/" class="header-logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="15" stroke="#2196F3" stroke-width="2"/>
+        <circle cx="16" cy="16" r="7"  fill="#2196F3" opacity="0.25"/>
+        <circle cx="16" cy="16" r="3"  fill="#2196F3"/>
+        <line x1="1"  y1="16" x2="10" y2="16" stroke="#2196F3" stroke-width="1.5"/>
+        <line x1="22" y1="16" x2="31" y2="16" stroke="#2196F3" stroke-width="1.5"/>
+      </svg>
+      <span data-i18n="appName">StrabiScan AI</span>
+    </a>
+    <div class="header-actions">
+      <select id="lang-select" class="lang-select" aria-label="Language">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+      </select>
+      <a href="/admin" class="btn btn-outline btn-sm">Admin</a>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ════════════════════════════════════════
+         IDLE SCREEN
+         ════════════════════════════════════════ -->
+    <div id="screen-idle" class="screen">
+      <h1 class="idle-title" data-i18n="idleTitle">StrabiScan AI</h1>
+      <p class="idle-subtitle" data-i18n="idleSubtitle">Dépistage du strabisme par intelligence artificielle</p>
+
+      <button id="btn-start" class="btn btn-primary btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+        <span data-i18n="startBtn">Démarrer l'analyse</span>
+      </button>
+
+      <div class="feature-grid">
+        <div class="feature-item">
+          <strong data-i18n="feat1Title">Guidage automatique</strong>
+          <span data-i18n="feat1Desc">La caméra vous guide vers la position idéale</span>
+        </div>
+        <div class="feature-item">
+          <strong data-i18n="feat2Title">Analyse IA</strong>
+          <span data-i18n="feat2Desc">Mesure précise de la déviation oculaire</span>
+        </div>
+        <div class="feature-item">
+          <strong data-i18n="feat3Title">Résultats détaillés</strong>
+          <span data-i18n="feat3Desc">Classification médicale et export PDF</span>
+        </div>
+        <div class="feature-item">
+          <strong data-i18n="feat4Title">Interface admin</strong>
+          <span data-i18n="feat4Desc">Validation par spécialiste ophtalmologue</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         CAMERA SCREEN
+         ════════════════════════════════════════ -->
+    <div id="screen-camera" class="screen">
+      <div class="card">
+        <p class="card-title" data-i18n="cameraTitle">Positionnez-vous face à la caméra</p>
+        <p class="text-dim" style="font-size:0.85rem;margin-bottom:0.75rem" data-i18n="cameraHint">
+          Regardez fixement le point blanc au centre de l'écran
+        </p>
+
+        <!-- Video + overlay -->
+        <div class="camera-container">
+          <video id="video-feed" autoplay muted playsinline></video>
+          <canvas id="canvas-overlay"></canvas>
+          <div class="fixation-dot"></div>
+        </div>
+
+        <!-- Quality indicators -->
+        <div class="quality-panel">
+          <div class="quality-item">
+            <div id="q-dot-face" class="quality-dot"></div>
+            <span data-i18n="qFace">Visage détecté</span>
+          </div>
+          <div class="quality-item">
+            <div id="q-dot-dist" class="quality-dot"></div>
+            <span data-i18n="qDistance">Distance correcte</span>
+          </div>
+          <div class="quality-item">
+            <div id="q-dot-eyes" class="quality-dot"></div>
+            <span data-i18n="qEyes">Yeux visibles</span>
+          </div>
+          <div class="quality-item">
+            <div id="q-dot-orient" class="quality-dot"></div>
+            <span data-i18n="qOrientation">Orientation frontale</span>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="quality-status-bar" id="status-bar">
+          <span id="status-text" data-i18n="statusWaiting">En attente du positionnement…</span>
+          <div id="status-dot" class="status-indicator"></div>
+        </div>
+
+        <!-- Cancel button -->
+        <div style="text-align:center;margin-top:1rem">
+          <button id="btn-cancel" class="btn btn-outline" data-i18n="cancelBtn">Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         COUNTDOWN (rendered as overlay via CSS)
+         ════════════════════════════════════════ -->
+    <div id="screen-countdown" class="screen">
+      <div id="countdown-number" class="countdown-number">3</div>
+      <p class="countdown-text" data-i18n="countdownText">Ne bougez plus !</p>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         LOADING SCREEN
+         ════════════════════════════════════════ -->
+    <div id="screen-loading" class="screen" style="text-align:center;padding:4rem 1rem">
+      <div class="spinner"></div>
+      <h2 data-i18n="loadingTitle" style="margin-bottom:0.5rem">Analyse en cours…</h2>
+      <p class="text-dim" data-i18n="loadingSubtitle">Détection des points oculaires</p>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         RESULTS SCREEN
+         ════════════════════════════════════════ -->
+    <div id="screen-results" class="screen">
+      <h2 style="margin-bottom:1rem" data-i18n="resultsTitle">Résultats de l'analyse</h2>
+
+      <!-- Badge -->
+      <div id="cls-badge" class="classification-badge badge-normal">—</div>
+
+      <div class="results-grid">
+
+        <!-- Left col: annotated image -->
+        <div class="card">
+          <p class="card-title" data-i18n="imgAnnotated">Image analysée</p>
+          <img id="annotated-img" class="annotated-img" src="" alt="Annotated" />
+        </div>
+
+        <!-- Right col: numerical table -->
+        <div class="card">
+          <p class="card-title" data-i18n="resultsNumerical">Résultats numériques</p>
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th data-i18n="deviation_h">Dév. H</th>
+                <th data-i18n="deviation_v">Dév. V</th>
+                <th data-i18n="prismDioptr">Δ</th>
+              </tr>
+            </thead>
+            <tbody id="result-tbody">
+              <!-- filled by results.js -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Chart -->
+      <div class="card mt-2">
+        <p class="card-title" data-i18n="chart_title">Échelle de déviation</p>
+        <div class="chart-container">
+          <canvas id="deviation-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recommendation -->
+      <div class="card mt-2">
+        <p class="card-title" data-i18n="recommendation">Recommandation</p>
+        <div class="recommendation-box">
+          <p id="recommendation-text"></p>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer mt-2" data-i18n="disclaimer">
+        Cet outil est un dispositif de dépistage uniquement. Il ne remplace pas un diagnostic médical professionnel.
+      </div>
+
+      <!-- Action buttons -->
+      <div class="results-actions mt-2">
+        <button id="btn-pdf" class="btn btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <span data-i18n="btnPdf">Exporter en PDF</span>
+        </button>
+        <button id="btn-new-analysis" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+          </svg>
+          <span data-i18n="btnNewAnalysis">Nouvelle analyse</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         ERROR SCREEN
+         ════════════════════════════════════════ -->
+    <div id="screen-error" class="screen">
+      <div class="error-icon">⚠️</div>
+      <h2 class="error-title" data-i18n="errorTitle">Analyse impossible</h2>
+      <p class="error-msg" id="error-msg"></p>
+      <div style="display:flex;gap:0.75rem;justify-content:center">
+        <button id="btn-retry" class="btn btn-primary" data-i18n="errorRetry">Réessayer</button>
+        <button id="btn-home"  class="btn btn-outline" data-i18n="errorHome">Accueil</button>
+      </div>
+    </div>
+
+  </main><!-- /app-main -->
+</div><!-- /app-shell -->
+
+<!-- App JS (load order matters) -->
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/camera.js"></script>
+<script src="/static/js/results.js"></script>
+<script src="/static/js/pdf.js"></script>
+<script src="/static/js/app.js"></script>
+
+</body>
+</html>

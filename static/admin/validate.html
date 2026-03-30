@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrabiScan AI — Validation</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body style="background:var(--color-bg);color:var(--color-text)">
+
+<div class="admin-container">
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div>
+      <h1>✅ Validation d'analyse</h1>
+      <p class="text-dim" style="font-size:0.85rem" id="analysis-subtitle">Analyse #—</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <a href="/admin/dashboard" class="btn btn-outline btn-sm">← Tableau de bord</a>
+      <button id="btn-logout" class="btn btn-danger btn-sm">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div id="alert" class="alert"></div>
+
+  <!-- Loading state -->
+  <div id="loading-state" style="text-align:center;padding:3rem">
+    <div class="spinner"></div>
+    <p class="text-dim">Chargement…</p>
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="main-content" style="display:none">
+    <div class="validate-layout">
+
+      <!-- Left: images + AI results -->
+      <div>
+        <div class="card">
+          <p class="card-title">Image analysée (IA)</p>
+          <img id="annotated-img" src="" alt="Analyse" style="width:100%;border-radius:8px;border:1px solid var(--color-border)" />
+        </div>
+
+        <div class="card mt-2">
+          <p class="card-title">Résultats IA</p>
+          <table class="result-table" id="ai-results-table">
+            <tbody id="ai-results-tbody"></tbody>
+          </table>
+          <div id="ai-badge" class="classification-badge badge-normal" style="margin-top:0.75rem">—</div>
+        </div>
+      </div>
+
+      <!-- Right: validation form -->
+      <div>
+        <div class="card">
+          <p class="card-title">Validation du spécialiste</p>
+
+          <div class="form-group">
+            <label>Note de qualité de la prédiction (1 = mauvaise, 5 = excellente)</label>
+            <div id="star-container" class="star-rating mt-1"></div>
+            <input type="hidden" id="rating-value" value="0" />
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="correction-select">Correction de la classification (si nécessaire)</label>
+            <select id="correction-select" class="form-control">
+              <option value="">— Pas de correction (résultat IA correct) —</option>
+              <option value="normal">NORMAL (0-1°)</option>
+              <option value="leger">LÉGER (1-5°)</option>
+              <option value="modere">MODÉRÉ (5-15°)</option>
+              <option value="severe">SÉVÈRE (&gt;15°)</option>
+            </select>
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="notes-input">Commentaires / Notes cliniques</label>
+            <textarea id="notes-input" class="form-control" rows="4"
+              placeholder="Observations du spécialiste, conditions de capture, remarques…"></textarea>
+          </div>
+
+          <button id="btn-save" class="btn btn-success w-full mt-2" style="margin-top:1rem">
+            💾 Enregistrer la validation
+          </button>
+
+          <div id="save-success" class="alert alert-success mt-1" style="display:none">
+            ✓ Validation enregistrée avec succès.
+          </div>
+        </div>
+
+        <!-- Metadata card -->
+        <div class="card mt-2">
+          <p class="card-title">Métadonnées de qualité</p>
+          <table class="result-table">
+            <tbody id="meta-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /admin-container -->
+
+<script src="/static/js/admin.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => Admin.initValidate());
+</script>
+</body>
+</html>
