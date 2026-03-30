@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth:*)",
+      "Bash(git config:*)",
+      "Bash(echo $GITHUB_TOKEN)",
+      "Read(//c/Users/mouss/**)",
+      "Bash(git -C \"C:/Users/mouss/Desktop/aicha 2\" remote -v)",
+      "Bash(powershell -Command \"Rename-Item -Path ''C:\\\\Users\\\\mouss\\\\Desktop\\\\aicha 2'' -NewName ''strabiscan-ai''\")"
+    ]
+  }
+}
